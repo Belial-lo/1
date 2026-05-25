@@ -1,0 +1,155 @@
+КАК НАСТРОИТЬ ПОД ЧУЖОЙ SQL SERVER
+
+Файлы, где меняется подключение:
+- app.py
+- import_excel.py
+
+Ищи строку:
+
+connection_string = (
+    "DRIVER={SQL Server};"
+    "SERVER=localhost\\SQLEXPRESS;"
+    "DATABASE=DB_Ivah;"
+    "Trusted_Connection=yes;"
+)
+
+
+1. Если на чужом компьютере другой адрес сервера
+
+Меняешь SERVER.
+
+Примеры:
+
+Локальный SQL Server Express:
+"SERVER=localhost\\SQLEXPRESS;"
+
+Локальный обычный SQL Server:
+"SERVER=localhost;"
+
+Через точку:
+"SERVER=.\\SQLEXPRESS;"
+
+Сервер по имени компьютера:
+"SERVER=COMPUTER_NAME\\SQLEXPRESS;"
+
+Сервер по IP:
+"SERVER=192.168.1.10;"
+
+Сервер по IP и порту:
+"SERVER=192.168.1.10,1433;"
+
+
+2. Если база называется иначе
+
+Меняешь DATABASE.
+
+Было:
+"DATABASE=DB_Ivah;"
+
+Например стало:
+"DATABASE=ExamDB;"
+
+
+3. Если драйвер называется иначе
+
+Проверить драйверы:
+
+python -c "import pyodbc; print(pyodbc.drivers())"
+
+Если есть:
+ODBC Driver 17 for SQL Server
+
+можно поставить:
+"DRIVER={ODBC Driver 17 for SQL Server};"
+
+Если есть:
+ODBC Driver 18 for SQL Server
+
+можно поставить:
+"DRIVER={ODBC Driver 18 for SQL Server};"
+
+Если есть только:
+SQL Server
+
+оставь:
+"DRIVER={SQL Server};"
+
+
+4. Если вход через Windows
+
+Оставляешь:
+
+"Trusted_Connection=yes;"
+
+Логин и пароль в строке подключения не нужны.
+
+
+5. Если дали логин и пароль SQL Server
+
+Убираешь:
+
+"Trusted_Connection=yes;"
+
+И добавляешь:
+
+"UID=имя_пользователя;"
+"PWD=пароль;"
+
+Пример:
+
+connection_string = (
+    "DRIVER={SQL Server};"
+    "SERVER=192.168.1.10;"
+    "DATABASE=DB_Ivah;"
+    "UID=sa;"
+    "PWD=12345;"
+)
+
+
+6. Если ошибка про SSL или шифрование
+
+Попробуй добавить:
+
+"Encrypt=no;"
+"TrustServerCertificate=yes;"
+
+Пример:
+
+connection_string = (
+    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "SERVER=localhost\\SQLEXPRESS;"
+    "DATABASE=DB_Ivah;"
+    "Trusted_Connection=yes;"
+    "Encrypt=no;"
+    "TrustServerCertificate=yes;"
+)
+
+Если все равно ошибка SSL, в SQL Server Configuration Manager:
+
+SQL Server Network Configuration
+Protocols for SQLEXPRESS
+Properties
+Flags
+Force Encryption = No
+
+После этого перезапустить службу SQL Server (SQLEXPRESS).
+
+
+7. Что установить для MSSQL-версии
+
+pip install pyodbc openpyxl pillow
+
+Также нужен установленный ODBC-драйвер SQL Server.
+
+
+8. Что запускать
+
+Сначала выполнить schema.sql в нужной базе.
+
+Потом:
+
+python import_excel.py
+
+Потом:
+
+python app.py

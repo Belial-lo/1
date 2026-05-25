@@ -1,0 +1,32 @@
+
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS roles;
+
+CREATE TABLE roles(
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE users(
+	id SERIAL PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+	login VARCHAR(100) NOT NULL UNIQUE,
+	password VARCHAR(100) NOT NULL,
+	role_id INTEGER NOT NULL REFERENCES roles(id)
+);
+
+CREATE TABLE products(
+	id_p SERIAL PRIMARY KEY,
+    article_num VARCHAR(6) NOT NULL UNIQUE,
+    product VARCHAR(100) NOT NULL,
+    unit VARCHAR(30) NOT NULL DEFAULT 'шт',
+    price NUMERIC(10,2) NOT NULL CHECK(price>=0),
+    supplier VARCHAR(100) NOT NULL,
+    creator VARCHAR(100) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    discount INTEGER NOT NULL DEFAULT 0 CHECK(discount>=0 and discount<=100),
+	inventory INTEGER NOT NULL DEFAULT 0 CHECK(inventory>=0),
+	description VARCHAR(100) NOT NULL,
+	photo VARCHAR(300) NOT NULL DEFAULT ''
+);

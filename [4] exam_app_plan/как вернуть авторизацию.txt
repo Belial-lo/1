@@ -1,0 +1,192 @@
+КАК ВЕРНУТЬ АВТОРИЗАЦИЮ В app_no_login.py
+
+Этот файл объясняет, что добавить в app_no_login.py, если нужно снова сделать вход.
+
+
+1. ИМПОРТ MESSAGEBOX
+
+Сейчас в app_no_login.py в начале:
+
+from tkinter import *
+
+Нужно добавить:
+
+from tkinter import messagebox
+
+То есть начало будет:
+
+from tkinter import *
+from tkinter import messagebox
+from pathlib import Path
+
+
+2. ДОБАВИТЬ ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+
+После:
+
+photo_images = []
+
+добавить:
+
+current_role = ""
+current_full_name = ""
+
+
+3. ДОБАВИТЬ fetch_one()
+
+После функции fetch_all() добавить:
+
+def fetch_one(sql, params=None):
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, params or [])
+            return cursor.fetchone()
+
+fetch_all() получает много строк.
+fetch_one() получает одну строку, поэтому она нужна для поиска пользователя.
+
+
+4. ДОБАВИТЬ ОКНО ВХОДА
+
+Перед show_main_window() добавить:
+
+def show_login_window():
+    global tk
+
+    tk = Tk()
+    tk.title("Авторизация")
+    tk.geometry("380x300")
+    tk.config(bg="#F8F8F8")
+
+    login_var = StringVar()
+    password_var = StringVar()
+
+    frame = Frame(tk, bg="white", padx=25, pady=20)
+    frame.pack(fill="both", expand=True, padx=35, pady=35)
+
+    Label(frame, text="Вход", bg="white", font=("Arial", 18, "bold")).pack(anchor="w", pady=(0, 15))
+    Label(frame, text="Логин", bg="white").pack(anchor="w")
+    Entry(frame, textvariable=login_var).pack(fill="x", pady=(3, 10), ipady=3)
+    Label(frame, text="Пароль", bg="white").pack(anchor="w")
+    Entry(frame, textvariable=password_var, show="*").pack(fill="x", pady=(3, 15), ipady=3)
+    Button(frame, text="Войти", bg="#B4E2AC", command=lambda: login(login_var, password_var)).pack(fill="x", ipady=7)
+
+    tk.mainloop()
+
+
+5. ДОБАВИТЬ ФУНКЦИЮ login()
+
+После show_login_window() добавить:
+
+def login(login_var, password_var):
+    global current_role, current_full_name
+
+    login_text = login_var.get().strip()
+    password_text = password_var.get().strip()
+
+    user = fetch_one("""
+        SELECT users.full_name, roles.name
+        FROM users
+        JOIN roles ON users.role_id = roles.id
+        WHERE users.login=%s AND users.password=%s
+    """, [login_text, password_text])
+
+    if user is None:
+        messagebox.showerror("Ошибка", "Неверный логин или пароль")
+        return
+
+    current_full_name = user[0]
+    current_role = user[1]
+    tk.destroy()
+    show_main_window()
+
+
+6. ПОКАЗАТЬ ФИО И РОЛЬ В ШАПКЕ
+
+В show_main_window() сейчас в header есть только:
+
+Label(header, text="Список товаров", bg="#D4E09B", font=("Arial", 18, "bold")).pack(side="left")
+
+После этой строки добавить:
+
+Label(header, text=f"{current_full_name} | {current_role}", bg="#D4E09B").pack(side="right")
+
+
+7. ДОБАВИТЬ КНОПКИ ПО РОЛЯМ
+
+После строки с Entry поиска:
+
+Entry(tools, textvariable=search_var, width=30).pack(side="left", padx=(5, 10))
+
+добавить:
+
+show_role_buttons(tools)
+
+Потом перед load_products() добавить функцию:
+
+def show_role_buttons(parent):
+    if current_role == "admin":
+        Button(parent, text="Добавить", bg="#D4E09B").pack(side="right")
+        Button(parent, text="Редактировать", bg="#D4E09B").pack(side="right", padx=(0, 8))
+        Button(parent, text="Удалить", bg="#F2B8B5").pack(side="right", padx=(0, 8))
+    elif current_role == "manager":
+        Button(parent, text="Заказы", bg="#D4E09B").pack(side="right")
+    elif current_role == "client":
+        Button(parent, text="Корзина", bg="#D4E09B").pack(side="right")
+
+Кнопки без команд, только для отображения разных прав.
+
+
+8. ИЗМЕНИТЬ ЗАПУСК В КОНЦЕ ФАЙЛА
+
+Сейчас внизу app_no_login.py:
+
+show_main_window()
+
+Нужно заменить на:
+
+show_login_window()
+
+Теперь сначала откроется вход, а после успешного логина откроется главное окно.
+
+
+9. КОРОТКАЯ ЛОГИКА
+
+Было без авторизации:
+
+show_main_window()
+
+Станет с авторизацией:
+
+show_login_window()
+login()
+show_main_window()
+
+
+10. ЧАСТЫЕ ОШИБКИ
+
+Правильно:
+
+cursor.execute(sql, [login_text, password_text])
+
+Неправильно:
+
+cursor.execute(sql, login_text, password_text)
+
+
+Правильно:
+
+current_full_name = user[0]
+current_role = user[1]
+
+Неправильно:
+
+current_full_name = user0
+current_role = user1
+
+
+Правильно:
+
+from tkinter import messagebox
+
+Если забыть этот импорт, messagebox.showerror() не сработает.
